@@ -38,26 +38,27 @@ O **Caixa System** é uma aplicação de gestão de lançamentos financeiros que
 - ✅ Arquitetura em camadas (Clean Architecture)
 - ✅ Princípios SOLID aplicados
 - ✅ Design Patterns (Repository, Dependency Injection, Value Object)
-- ✅ 40+ testes automatizados (unitários + integração)
+- ✅ 27 testes automatizados
 - ✅ Documentação completa (README + comentários XML)
 - ✅ Tratamento global de exceções
 - ✅ Logging estruturado
 
 #### Não Funcionais
-- ✅ Sistema de lançamentos resiliente (continua operante em caso de falha)
 - ✅ Persistência assíncrona no SQL Server via Dapper
-- ✅ Thread-safety garantida com collections thread-safe
 
 ## 📦 Requisitos
 
-- **.NET SDK 9.0** ou superior
-- **Windows 10+**, **Linux**, ou **macOS**
-- **Git** (para clonar o repositório)
+- **Git**
+- **Docker Desktop** ou Docker Engine com Docker Compose
 
-### Verificar versão do .NET
+O .NET SDK 9.0 é necessário apenas para compilar e executar os testes fora do Docker.
+
+### Verificar os requisitos
 
 ```bash
-dotnet --version
+git --version
+docker version
+docker compose version
 ```
 
 ## 🚀 Instalação
@@ -65,53 +66,103 @@ dotnet --version
 ### 1. Clonar o Repositório
 
 ```bash
-git clone https://github.com/seu-usuario/Caixa-System.git
+git clone https://github.com/igortavares90/Caixa-System.git
 cd Caixa-System
 ```
 
-### 2. Restaurar Dependências
+### 2. Configurar a senha do SQL Server
+
+O arquivo `.env` é local e não é enviado ao GitHub. Crie-o a partir do exemplo.
+
+No Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+No Linux ou macOS:
+
+```bash
+cp .env.example .env
+```
+
+Abra o arquivo `.env` e troque a senha de exemplo:
+
+```env
+SA_PASSWORD=MinhaSenhaForte123!
+```
+
+A senha deve ter pelo menos oito caracteres e combinar letras maiúsculas, minúsculas, números e caracteres especiais.
+
+## ▶️ Execução com Docker
+
+### 1. Criar e iniciar a API e o SQL Server
+
+```bash
+docker compose up -d --build
+```
+
+Na primeira execução:
+
+1. O Docker cria o contêiner do SQL Server.
+2. A API aguarda o health check do SQL Server.
+3. O `DapperDatabaseInitializer` cria automaticamente o banco `CaixaSystemDb`.
+4. As tabelas `Transactions` e `DailyBalances` são criadas automaticamente.
+5. A API começa a aceitar requisições.
+
+### 2. Verificar a execução
+
+```bash
+docker compose ps
+docker compose logs api
+```
+
+A aplicação estará disponível em:
+
+- **Swagger**: http://localhost:5000/swagger
+- **Health check**: http://localhost:5000/health
+- **SQL Server**: `localhost,1433`
+- **Usuário do banco**: `sa`
+- **Senha do banco**: valor definido em `.env`
+
+### 3. Parar os serviços
+
+Para parar os contêineres preservando o banco:
+
+```bash
+docker compose down
+```
+
+Para apagar também o volume e recriar o banco do zero na próxima execução:
+
+```bash
+docker compose down -v
+docker compose up -d --build
+```
+
+> `docker compose down -v` apaga permanentemente os dados locais do SQL Server.
+
+### Solução de problemas
+
+Se o SQL Server não ficar saudável, confira se a senha no `.env` atende à política de complexidade e execute:
+
+```bash
+docker compose logs sqlserver
+```
+
+Se as portas `5000` ou `1433` já estiverem ocupadas, encerre o processo conflitante ou altere o mapeamento de portas no `docker-compose.yml`.
+
+## 🧪 Desenvolvimento e testes locais
+
+Com o .NET SDK 9.0 instalado:
 
 ```bash
 dotnet restore
-```
-
-### 3. Compilar a Solução
-
-```bash
 dotnet build
-```
-
-## ▶️ Execução
-
-### Executar a API
-
-```bash
-cd CaixaSystem.API
-dotnet run
-```
-
-A API estará disponível em:
-- **HTTP**: http://localhost:5000
-- **HTTPS**: https://localhost:5001
-- **Swagger**: http://localhost:5000/swagger/index.html
-
-### Executar os Testes
-
-```bash
-# Todos os testes
 dotnet test
-
-# Com detalhes verbosos
-dotnet test --verbosity detailed
-
-# Apenas testes de integração
-dotnet test --filter "Infrastructure"
-
-# Com cobertura de código
-dotnet test /p:CollectCoverage=true
 ```
 
-### Endpoints Disponíveis
+## 🌐 APIs Disponíveis
 
 #### Transações
 
@@ -685,6 +736,5 @@ Desenvolvido como desafio técnico para demonstrar conhecimento em:
 
 ---
 
-**Desenvolvido com ❤️ usando C# .NET 9.0**
+**Desenvolvido com C# .NET 9.0**
 
-Para dúvidas ou sugestões, abra uma issue no GitHub!
